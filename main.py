@@ -71,6 +71,10 @@ while running:
                 game_over = False
                 reset_game()
 
+            # Jump when UP arrow is pressed
+            if event.key == pygame.K_UP and player.on_ground:
+                player.velocity_y = -15  # Jump force
+
     if not game_over:
         # Update player and check platform collisions
         player.update(dt, platforms)
