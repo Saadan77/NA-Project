@@ -11,9 +11,7 @@ class Player:
         self.velocity_y = 0
         self.speed = 5
         self.gravity = 0.5
-        self.jump_strength = -10  # Jump strength
         self.on_ground = False
-        self.is_jumping = False
 
     def update(self, dt, platforms):
         # Handle movement
@@ -27,26 +25,21 @@ class Player:
 
         self.x += self.velocity_x
 
-        # Jumping mechanism
-        if self.on_ground and not self.is_jumping:
-            if keys[pygame.K_SPACE]:
-                self.velocity_y = self.jump_strength
-                self.is_jumping = True
-        elif not self.on_ground:
-            self.velocity_y += self.gravity  # Apply gravity when in the air
-
-        # Update vertical position
+        # Apply gravity
+        if not self.on_ground:
+            self.velocity_y += self.gravity
         self.y += self.velocity_y
 
-        # Collision with platforms
+        # Check collision with platforms
         self.on_ground = False
         for platform in platforms:
+            # Check if the player is falling onto the platform
             if self.y + self.height <= platform.y and self.y + self.height + self.velocity_y >= platform.y:
                 if self.x + self.width > platform.x and self.x < platform.x + platform.width:
+                    # Adjust player position to land on the platform
                     self.velocity_y = 0
-                    self.y = platform.y - self.height
+                    self.y = platform.y - self.height  # Place player just above the platform
                     self.on_ground = True
-                    self.is_jumping = False
                     break
 
         # Keep player within bounds

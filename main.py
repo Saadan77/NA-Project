@@ -26,40 +26,37 @@ clock = pygame.time.Clock()
 # Create the player
 player = Player(screen_width // 2, screen_height // 2)
 
-# Generate platforms in a structured manner
+# Game parameters
+player_health = 3
+game_time = 30  # Game timer set to 30 seconds
+
 def generate_platforms():
     platforms = []
-    platform_height = 20
-    platform_width = 200
-    gap = 100  # Vertical gap between platforms
-    num_of_platforms = 6  # Number of platforms
-
-    # Start platform near the bottom of the screen
-    start_y = screen_height - 100  # Start from the bottom
-
-    for i in range(num_of_platforms):
-        x = random.randint(50, screen_width - platform_width - 50)  # Horizontal position
-        y = start_y - (i * gap)  # Vertical position with gap between platforms
-        platform = Platform(x, y, platform_width, platform_height)
+    for _ in range(5):  # Generate 5 platforms
+        platform_width = random.randint(100, 200)
+        platform_height = 20
+        x = random.randint(50, screen_width - platform_width - 50)  # Ensure platform is within screen bounds
+        y = random.randint(100, screen_height - 100)  # Platform should not be at the very top or bottom
+        platform = Platform(x, y, platform_width, platform_height)  # No more move_direction argument
         platforms.append(platform)
-
     return platforms
 
 # Function to reset the game
 def reset_game():
-    global player, platforms, score
-    player = Player(screen_width // 2, screen_height // 2)  # Reset player position
-    platforms = generate_platforms()  # Reset platforms
-    score = 0  # Reset score
+    global player, platforms, player_health, game_time
+    player = Player(screen_width // 2, screen_height // 2)
+    platforms = generate_platforms()
+    player_health = 3
+    game_time = 30
 
 # Generate initial platforms
 platforms = generate_platforms()
 
 # Game loop
 running = True
-score = 0  # Initialize score
-previously_on_ground = False  # To track if the player was previously on the ground
-game_over = False  # Track if the game is over
+score = 0
+previously_on_ground = False
+game_over = False
 
 while running:
     dt = clock.tick(60) / 1000  # Amount of seconds between each loop
@@ -67,36 +64,50 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
-            if game_over and event.key == pygame.K_r:  # Restart the game if 'R' is pressed
+            if game_over and event.key == pygame.K_r:
                 game_over = False
                 reset_game()
 
-            # Jump when UP arrow is pressed
             if event.key == pygame.K_UP and player.on_ground:
                 player.velocity_y = -15  # Jump force
 
     if not game_over:
+        # Update game timer
+        game_time -= dt
+        if game_time <= 0:
+            game_time = 0
+            game_over = True
+
         # Update player and check platform collisions
         player.update(dt, platforms)
 
         # Check if player has fallen off the screen (Game Over condition)
         if player.y > screen_height:
-            game_over = True
+            player_health -= 1
+            if player_health <= 0:
+                game_over = True
+            else:
+                # Reset player position if health is remaining
+                player.x = screen_width // 2
+                player.y = screen_height // 2
 
         # Check if player has landed on a platform to increment score
-        on_ground = False  # Track whether the player is on the ground this frame
+        on_ground = False
         for platform in platforms:
             if player.y + player.height <= platform.y and player.y + player.height + player.velocity_y >= platform.y:
                 if player.x + player.width > platform.x and player.x < platform.x + platform.width:
                     on_ground = True
-                    if not previously_on_ground:  # Increment score only the first time landing on a platform
+                    if not previously_on_ground:
                         score += 1
                         previously_on_ground = True
                     break
 
-        # If player leaves the platform, reset the flag
         if not on_ground:
             previously_on_ground = False
+
+        # Update moving platforms
+        for platform in platforms:
+            platform.update(dt)
 
         # Draw
         screen.fill(WHITE)  # Clear the screen
@@ -104,9 +115,13 @@ while running:
         for platform in platforms:
             platform.draw(screen)
 
-        # Draw the score
+        # Draw the score and health
         score_text = font.render(f"Score: {score}", True, BLACK)
+        health_text = font.render(f"Health: {player_health}", True, BLACK)
+        time_text = font.render(f"Time: {int(game_time)}", True, BLACK)
         screen.blit(score_text, (10, 10))
+        screen.blit(health_text, (10, 40))
+        screen.blit(time_text, (10, 70))
 
     else:
         # Game Over Screen
