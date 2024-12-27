@@ -16,6 +16,9 @@ pygame.display.set_caption("Gravity Jumper")
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
+# Set up fonts
+font = pygame.font.Font(None, 36)
+
 # Set up clock
 clock = pygame.time.Clock()
 
@@ -45,20 +48,41 @@ platforms = generate_platforms()
 
 # Game loop
 running = True
+score = 0  # Initialize score
+previously_on_ground = False  # To track if the player was previously on the ground
 while running:
     dt = clock.tick(60) / 1000  # Amount of seconds between each loop
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # Update
+    # Update player and check platform collisions
     player.update(dt, platforms)
+    
+    # Check if player has landed on a platform to increment score
+    on_ground = False  # Track whether the player is on the ground this frame
+    for platform in platforms:
+        if player.y + player.height <= platform.y and player.y + player.height + player.velocity_y >= platform.y:
+            if player.x + player.width > platform.x and player.x < platform.x + platform.width:
+                on_ground = True
+                if not previously_on_ground:  # Increment score only the first time landing on a platform
+                    score += 1
+                    previously_on_ground = True
+                break
+
+    # If player leaves the platform, reset the flag
+    if not on_ground:
+        previously_on_ground = False
 
     # Draw
     screen.fill(WHITE)  # Clear the screen
     player.draw(screen)
     for platform in platforms:
         platform.draw(screen)
+
+    # Draw the score
+    score_text = font.render(f"Score: {score}", True, BLACK)
+    screen.blit(score_text, (10, 10))
 
     pygame.display.update()
 
