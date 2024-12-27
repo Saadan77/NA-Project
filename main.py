@@ -15,6 +15,7 @@ pygame.display.set_caption("Gravity Jumper")
 # Set up colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
 # Set up fonts
 font = pygame.font.Font(None, 36)
@@ -44,45 +45,69 @@ def generate_platforms():
 
     return platforms
 
+# Function to reset the game
+def reset_game():
+    global player, platforms, score
+    player = Player(screen_width // 2, screen_height // 2)  # Reset player position
+    platforms = generate_platforms()  # Reset platforms
+    score = 0  # Reset score
+
+# Generate initial platforms
 platforms = generate_platforms()
 
 # Game loop
 running = True
 score = 0  # Initialize score
 previously_on_ground = False  # To track if the player was previously on the ground
+game_over = False  # Track if the game is over
+
 while running:
     dt = clock.tick(60) / 1000  # Amount of seconds between each loop
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            if game_over and event.key == pygame.K_r:  # Restart the game if 'R' is pressed
+                game_over = False
+                reset_game()
 
-    # Update player and check platform collisions
-    player.update(dt, platforms)
-    
-    # Check if player has landed on a platform to increment score
-    on_ground = False  # Track whether the player is on the ground this frame
-    for platform in platforms:
-        if player.y + player.height <= platform.y and player.y + player.height + player.velocity_y >= platform.y:
-            if player.x + player.width > platform.x and player.x < platform.x + platform.width:
-                on_ground = True
-                if not previously_on_ground:  # Increment score only the first time landing on a platform
-                    score += 1
-                    previously_on_ground = True
-                break
+    if not game_over:
+        # Update player and check platform collisions
+        player.update(dt, platforms)
 
-    # If player leaves the platform, reset the flag
-    if not on_ground:
-        previously_on_ground = False
+        # Check if player has fallen off the screen (Game Over condition)
+        if player.y > screen_height:
+            game_over = True
 
-    # Draw
-    screen.fill(WHITE)  # Clear the screen
-    player.draw(screen)
-    for platform in platforms:
-        platform.draw(screen)
+        # Check if player has landed on a platform to increment score
+        on_ground = False  # Track whether the player is on the ground this frame
+        for platform in platforms:
+            if player.y + player.height <= platform.y and player.y + player.height + player.velocity_y >= platform.y:
+                if player.x + player.width > platform.x and player.x < platform.x + platform.width:
+                    on_ground = True
+                    if not previously_on_ground:  # Increment score only the first time landing on a platform
+                        score += 1
+                        previously_on_ground = True
+                    break
 
-    # Draw the score
-    score_text = font.render(f"Score: {score}", True, BLACK)
-    screen.blit(score_text, (10, 10))
+        # If player leaves the platform, reset the flag
+        if not on_ground:
+            previously_on_ground = False
+
+        # Draw
+        screen.fill(WHITE)  # Clear the screen
+        player.draw(screen)
+        for platform in platforms:
+            platform.draw(screen)
+
+        # Draw the score
+        score_text = font.render(f"Score: {score}", True, BLACK)
+        screen.blit(score_text, (10, 10))
+
+    else:
+        # Game Over Screen
+        game_over_text = font.render("Game Over! Press 'R' to Restart", True, RED)
+        screen.blit(game_over_text, (screen_width // 2 - game_over_text.get_width() // 2, screen_height // 2))
 
     pygame.display.update()
 
