@@ -6,15 +6,15 @@ class Player:
         self.y = y
         self.width = 50
         self.height = 50
-        self.color = (0, 0, 255)  # Blue color
+        self.color = (0, 0, 255)
         self.velocity_x = 0
         self.velocity_y = 0
         self.speed = 5
         self.gravity = 0.5
         self.on_ground = False
+        self.double_jump_available = True
 
     def update(self, dt, platforms):
-        # Handle movement
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             self.velocity_x = -self.speed
@@ -25,24 +25,27 @@ class Player:
 
         self.x += self.velocity_x
 
-        # Apply gravity
         if not self.on_ground:
             self.velocity_y += self.gravity
+
+        if self.on_ground and keys[pygame.K_UP]:
+            self.velocity_y = -15
+        elif not self.on_ground and self.double_jump_available and keys[pygame.K_UP]:
+            self.velocity_y = -15
+            self.double_jump_available = False
+
         self.y += self.velocity_y
 
-        # Check collision with platforms
         self.on_ground = False
         for platform in platforms:
-            # Check if the player is falling onto the platform
             if self.y + self.height <= platform.y and self.y + self.height + self.velocity_y >= platform.y:
                 if self.x + self.width > platform.x and self.x < platform.x + platform.width:
-                    # Adjust player position to land on the platform
                     self.velocity_y = 0
-                    self.y = platform.y - self.height  # Place player just above the platform
+                    self.y = platform.y - self.height
                     self.on_ground = True
+                    self.double_jump_available = True
                     break
 
-        # Keep player within bounds
         if self.x < 0:
             self.x = 0
         elif self.x + self.width > 800:

@@ -24,37 +24,58 @@ font = pygame.font.Font(None, 36)
 clock = pygame.time.Clock()
 
 # Create the player
-player = Player(screen_width // 2, screen_height // 2)
+player = Player(screen_width // 2, screen_height - 120)
 
 # Game parameters
 player_health = 3
 game_time = 30  # Game timer set to 30 seconds
+level = 1
+score = 0
 
-def generate_platforms():
+# Generate platforms with more even distribution
+def generate_platforms(level):
     platforms = []
-    for _ in range(5):  # Generate 5 platforms
-        platform_width = random.randint(100, 200)
+    platform_count = 5 + level  # Number of platforms increases with level
+    spacing = screen_height // (platform_count + 1)  # Distribute platforms evenly in vertical space
+
+    for i in range(platform_count):
+        platform_width = random.randint(100, 150)
         platform_height = 20
-        x = random.randint(50, screen_width - platform_width - 50)  # Ensure platform is within screen bounds
-        y = random.randint(100, screen_height - 100)  # Platform should not be at the very top or bottom
-        platform = Platform(x, y, platform_width, platform_height)  # No more move_direction argument
+        x = random.randint(50, screen_width - platform_width - 50)  # Random horizontal position
+        y = spacing * (i + 1) + random.randint(-20, 20)  # Small random offset for variety
+        platform_type = random.choice(["normal", "moving", "disappearing", "bouncy"])
+        platform = Platform(x, y, platform_width, platform_height, platform_type)
         platforms.append(platform)
+
     return platforms
 
-# Function to reset the game
+# Reset game state
 def reset_game():
-    global player, platforms, player_health, game_time
-    player = Player(screen_width // 2, screen_height // 2)
-    platforms = generate_platforms()
+    global player, platforms, player_health, game_time, level, score
+    player = Player(screen_width // 2, screen_height - 120)
+    platforms = generate_platforms(level)
+    static_platform = Platform(screen_width // 2 - 100, screen_height - 40, 200, 20)  # Smaller static platform
+    platforms.insert(0, static_platform)
     player_health = 3
     game_time = 30
+    level = 1
+    score = 0
 
-# Generate initial platforms
-platforms = generate_platforms()
+# Draw health bar
+def draw_health_bar(screen, x, y, health, max_health):
+    bar_width = 200
+    bar_height = 20
+    fill = (health / max_health) * bar_width
+    pygame.draw.rect(screen, RED, (x, y, bar_width, bar_height))
+    pygame.draw.rect(screen, (0, 255, 0), (x, y, fill, bar_height))
+
+# Generate initial platforms and add the static platform
+platforms = generate_platforms(level)
+static_platform = Platform(screen_width // 2 - 100, screen_height - 40, 200, 20)  # Smaller static platform
+platforms.insert(0, static_platform)
 
 # Game loop
 running = True
-score = 0
 previously_on_ground = False
 game_over = False
 
@@ -87,7 +108,6 @@ while running:
             if player_health <= 0:
                 game_over = True
             else:
-                # Reset player position if health is remaining
                 player.x = screen_width // 2
                 player.y = screen_height // 2
 
@@ -106,22 +126,30 @@ while running:
             previously_on_ground = False
 
         # Update moving platforms
-        for platform in platforms:
+        for platform in platforms:  # <-- Place this here
             platform.update(dt)
 
+        # Increase level difficulty based on score
+        if score >= level * 10:
+            level += 1
+            platforms = generate_platforms(level)
+
         # Draw
-        screen.fill(WHITE)  # Clear the screen
+        screen.fill(WHITE)
         player.draw(screen)
         for platform in platforms:
             platform.draw(screen)
 
-        # Draw the score and health
+        # Draw the score, health, time, and level
         score_text = font.render(f"Score: {score}", True, BLACK)
         health_text = font.render(f"Health: {player_health}", True, BLACK)
         time_text = font.render(f"Time: {int(game_time)}", True, BLACK)
+        level_text = font.render(f"Level: {level}", True, BLACK)
         screen.blit(score_text, (10, 10))
         screen.blit(health_text, (10, 40))
         screen.blit(time_text, (10, 70))
+        screen.blit(level_text, (10, 100))
+        draw_health_bar(screen, 550, 10, player_health, 3)
 
     else:
         # Game Over Screen
