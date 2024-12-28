@@ -1,5 +1,5 @@
 import pygame
-from utils import trapezoidal_rule
+from utils import bisection_method  # Import bisection_method from utils.py
 
 class Obstacle:
     def __init__(self, x, y, width, height, speed):
@@ -20,13 +20,32 @@ class Obstacle:
         if len(self.positions) > 100:
             self.positions.pop(0)
 
-    def distance_traveled(self):
-        # Extract time (x) and positions (y) from self.positions
-        times = [pos[0] for pos in self.positions]
-        y_values = [pos[1] for pos in self.positions]
+    def collision_func(self, t, player):
+        """
+        A helper function for collision detection.
+        We want to find the point where the player and the obstacle intersect.
+        Returns a positive value if no collision; negative if a collision is about to occur.
+        """
+        player_bottom = player.y + player.height
+        obstacle_bottom = self.y + self.height
 
-        # Use Trapezoidal Rule for distance calculation
-        return trapezoidal_rule(times, y_values)
+        # Check for vertical intersection: the player and obstacle are in the same y-range
+        if player.x + player.width > self.x and player.x < self.x + self.width:
+            return player_bottom - obstacle_bottom  # Difference between player bottom and obstacle bottom
+        return float('inf')  # No collision if no x-overlap
+
+    def distance_to_collision(self, player, tol=1e-5):
+        """
+        Uses the Bisection method to estimate when a collision with an obstacle will happen.
+        """
+        def func_to_solve(t):
+            return self.collision_func(t, player)
+        
+        # Time of collision estimation using bisection
+        try:
+            return bisection_method(func_to_solve, 0, 1, tol)  # Adjust bounds as necessary
+        except ValueError:
+            return None  # No collision (could add more logic)
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.width, self.height))

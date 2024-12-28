@@ -27,40 +27,29 @@ def linear_regression(x, slope, intercept):
     """
     return slope * x + intercept
 
-def rk4_method(value, rate_of_change_func, dt):
+def bisection_method(func, a, b, tol=1e-5, max_iter=100):
     """
-    Perform a single Runge-Kutta 4th order update.
-
-    :param value: Current value (e.g., position or velocity).
-    :param rate_of_change_func: Function that calculates the rate of change.
-    :param dt: Time step (delta time).
-    :return: Updated value after applying RK-4.
-    """
-    k1 = dt * rate_of_change_func(value)
-    k2 = dt * rate_of_change_func(value + 0.5 * k1)
-    k3 = dt * rate_of_change_func(value + 0.5 * k2)
-    k4 = dt * rate_of_change_func(value + k3)
-
-    return value + (k1 + 2 * k2 + 2 * k3 + k4) / 6
-
-def lagrange_interpolation(x_points, y_points, x):
-    """
-    Lagrange Interpolation for calculating smooth values.
-    
+    Implements the Bisection method to find the root of the function `func`.
     Args:
-    - x_points: List of x-coordinates.
-    - y_points: List of y-coordinates.
-    - x: The x-value to interpolate.
-    
+        func: The function for which we are finding the root.
+        a, b: The interval [a, b] where the function changes sign.
+        tol: The tolerance for convergence.
+        max_iter: The maximum number of iterations before stopping.
     Returns:
-    - Interpolated y-value.
+        The estimated root of the function.
     """
-    n = len(x_points)
-    result = 0.0
-    for i in range(n):
-        term = y_points[i]
-        for j in range(n):
-            if i != j:
-                term *= (x - x_points[j]) / (x_points[i] - x_points[j])
-        result += term
-    return result
+    if func(a) * func(b) >= 0:
+        raise ValueError("The function must change signs over the interval [a, b].")
+    
+    iter_count = 0
+    while (b - a) / 2 > tol and iter_count < max_iter:
+        c = (a + b) / 2
+        if func(c) == 0:
+            return c
+        elif func(c) * func(a) < 0:
+            b = c
+        else:
+            a = c
+        iter_count += 1
+        
+    return (a + b) / 2
