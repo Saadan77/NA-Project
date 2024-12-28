@@ -1,4 +1,5 @@
 import pygame # type: ignore
+from utils import lagrange_interpolation
 
 class Platform:
     def __init__(self, x, y, width, height, platform_type="normal"):

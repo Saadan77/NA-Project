@@ -1,7 +1,9 @@
 import pygame
 from player import Player
-from platform import Platform
+from platform import Platform # type: ignore
 import random
+from utils import trapezoidal_rule, linear_regression
+from obstacle import Obstacle
 
 # Initialize Pygame
 pygame.init()
@@ -31,6 +33,38 @@ player_health = 3
 game_time = 30  # Game timer set to 30 seconds
 level = 1
 score = 0
+
+# Add obstacles to the game
+obstacles = []
+obstacle_base_speed = 50
+obstacle_count = 3  # Adjust dynamically
+
+# Difficulty adjustment factors for linear regression
+difficulty_slope = 0.05  # Increase difficulty gradually with score
+difficulty_intercept = 1.0  # Base difficulty level
+
+# Function to generate new obstacles
+# Example of creating lists for trapezoidal_rule
+def generate_obstacles(level, difficulty_factor):
+    obstacle_list = []
+    for i in range(obstacle_count):
+        width = 50
+        height = 30
+        x = random.randint(50, screen_width - width - 50)
+        y = random.randint(-200, -50)
+        
+        # Adjust this section based on trapezoidal rule
+        # For example, you could integrate between level 0 and the current level:
+        x_values = [0, level]  # Just a simple example for x-values (level as a representation)
+        y_values = [difficulty_factor, difficulty_factor + 0.5]  # Adjust this based on your logic
+        speed = trapezoidal_rule(x_values, y_values)  # Call with correct arguments
+        
+        obstacle = Obstacle(x, y, width, height, speed)
+        obstacle_list.append(obstacle)
+    return obstacle_list
+
+# Add initial obstacles
+obstacles = generate_obstacles(level, linear_regression(score, difficulty_slope, difficulty_intercept))
 
 # Generate platforms with more even distribution
 def generate_platforms(level):
@@ -105,11 +139,13 @@ while running:
         # Check if player has fallen off the screen (Game Over condition)
         if player.y > screen_height:
             player_health -= 1
-            if player_health <= 0:
+            if player_health <= 0:  # If health is 0 or below, game over
+                player_health = 0  # Ensure health does not go below 0
                 game_over = True
             else:
                 player.x = screen_width // 2
                 player.y = screen_height // 2
+
 
         # Check if player has landed on a platform to increment score
         on_ground = False
@@ -128,27 +164,60 @@ while running:
         # Update moving platforms
         for platform in platforms:  # <-- Place this here
             platform.update(dt)
+        
+        # Update difficulty factor dynamically
+        difficulty_factor = linear_regression(score, difficulty_slope, difficulty_intercept)
+
+        # Update obstacles
+        for obstacle in obstacles:
+            obstacle.update(dt)
+
+            # Check for collision with obstacles (decrease health if collided)
+            for obstacle in obstacles:
+                if (player.x < obstacle.x + obstacle.width and 
+                    player.x + player.width > obstacle.x and 
+                    player.y < obstacle.y + obstacle.height and 
+                    player.y + player.height > obstacle.y):
+                    
+                    player_health -= 1
+                    
+                    if player_health <= 0:  # Game Over when health reaches zero
+                        player_health = 0
+                        game_over = True
+                    else:
+                        obstacles.remove(obstacle)
+
+        # Add new obstacles periodically or based on levels
+        if len(obstacles) < 3:  # Maintain a set number of obstacles
+            x = random.randint(50, screen_width - 100)
+            speed = random.randint(50, 150)
+            obstacles.append(Obstacle(x, -50, 50, 50, speed))
 
         # Increase level difficulty based on score
         if score >= level * 10:
             level += 1
             platforms = generate_platforms(level)
+            obstacles = generate_obstacles(level, difficulty_factor)
 
         # Draw
         screen.fill(WHITE)
         player.draw(screen)
         for platform in platforms:
             platform.draw(screen)
+        for obstacle in obstacles:
+            obstacle.draw(screen)
 
         # Draw the score, health, time, and level
         score_text = font.render(f"Score: {score}", True, BLACK)
         health_text = font.render(f"Health: {player_health}", True, BLACK)
         time_text = font.render(f"Time: {int(game_time)}", True, BLACK)
         level_text = font.render(f"Level: {level}", True, BLACK)
+        difficulty_text = font.render(f"Difficulty: {difficulty_factor:.2f}", True, BLACK)
         screen.blit(score_text, (10, 10))
         screen.blit(health_text, (10, 40))
         screen.blit(time_text, (10, 70))
         screen.blit(level_text, (10, 100))
+        screen.blit(difficulty_text, (10, 130))
         draw_health_bar(screen, 550, 10, player_health, 3)
 
     else:
