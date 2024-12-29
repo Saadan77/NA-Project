@@ -10,7 +10,6 @@ def linear_regression(x, slope, intercept):
     """
     return slope * x + intercept
 
-# Simpson's 1/3 Rule for numerical integration
 def simpsons_one_third_rule(x_values, y_values):
     if len(x_values) != len(y_values):
         raise ValueError("x_values and y_values must be of the same length")

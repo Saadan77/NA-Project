@@ -8,10 +8,10 @@ class Platform:
         self.height = height
         self.type = platform_type
         self.color = (0, 255, 0)
-        self.move_speed = 0  # Default move speed for non-moving platforms
+        self.move_speed = 0
 
         if platform_type == "moving":
-            self.move_speed = 2  # Set a speed for moving platforms
+            self.move_speed = 2
         elif platform_type == "bouncy":
             self.color = (0, 0, 255)
         elif platform_type == "disappearing":

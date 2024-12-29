@@ -8,7 +8,7 @@ class Obstacle:
         self.width = width
         self.height = height
         self.speed = speed
-        self.positions = [(0, y)]  # Store (time, y-position) tuples
+        self.positions = [(0, y)]
 
     def update(self, dt):
         # Update y position
@@ -16,7 +16,6 @@ class Obstacle:
         current_time = self.positions[-1][0] + dt
         self.positions.append((current_time, self.y))
 
-        # Limit stored positions to avoid memory overflow
         if len(self.positions) > 100:
             self.positions.pop(0)
 
@@ -43,9 +42,9 @@ class Obstacle:
         
         # Time of collision estimation using bisection
         try:
-            return bisection_method(func_to_solve, 0, 1, tol)  # Adjust bounds as necessary
+            return bisection_method(func_to_solve, 0, 1, tol)
         except ValueError:
-            return None  # No collision (could add more logic)
+            return None
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.width, self.height))

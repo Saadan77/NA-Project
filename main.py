@@ -5,47 +5,37 @@ import random
 from utils import linear_regression, simpsons_one_third_rule, fourth_order_rk_method, score_function
 from obstacle import Obstacle
 
-# Initialize Pygame
 pygame.init()
 
-# Set up display
 screen_width = 800
 screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Gravity Jumper")
 
-# Set up colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-# Set up fonts
 font = pygame.font.Font(None, 36)
-
-# Set up clock
 clock = pygame.time.Clock()
 
-# Create the player
 player = Player(screen_width // 2, screen_height - 120)
 
-# Game parameters
 player_health = 3
-game_time = 30  # Game timer set to 30 seconds
+game_time = 30
 level = 1
 score = 0
 score_time = 0
 
-# Add obstacles to the game
 obstacles = []
 obstacle_base_speed = 50
-obstacle_count = 3  # Adjust dynamically
+obstacle_count = 3
 
 # Difficulty adjustment factors for linear regression
 difficulty_slope = 0.05  # Increase difficulty gradually with score
 difficulty_intercept = 1.0  # Base difficulty level
 
-# Function to generate new obstacles
-# Example of creating lists for trapezoidal_rule
+# Generate new obstacles by trapezoidal_rule
 def generate_obstacles(level, difficulty_factor):
     obstacle_list = []
     for i in range(obstacle_count):
@@ -54,11 +44,10 @@ def generate_obstacles(level, difficulty_factor):
         x = random.randint(50, screen_width - width - 50)
         y = random.randint(-200, -50)
         
-        # Apply Simpson's 1/3 Rule (instead of trapezoidal rule here for demonstration)
-        # For example, we could compute obstacle speed dynamically based on level.
-        x_values = [0, level, level + 5]  # For simplicity: integrating from level to level + 5
+        # Apply Simpson's 1/3 Rule) for obstacle speed dynamically based on level.
+        x_values = [0, level, level + 5]
         y_values = [difficulty_factor, difficulty_factor + 0.5, difficulty_factor + 1.0]
-        speed = simpsons_one_third_rule(x_values, y_values)  # Use Simpson's rule
+        speed = simpsons_one_third_rule(x_values, y_values)  # Simpson's rule
         
         obstacle = Obstacle(x, y, width, height, speed)
         obstacle_list.append(obstacle)
@@ -67,11 +56,10 @@ def generate_obstacles(level, difficulty_factor):
 # Add initial obstacles
 obstacles = generate_obstacles(level, linear_regression(score, difficulty_slope, difficulty_intercept))
 
-# Generate platforms with more even distribution
 def generate_platforms(level):
     platforms = []
-    platform_count = 5 + level  # Number of platforms increases with level
-    spacing = screen_height // (platform_count + 1)  # Distribute platforms evenly in vertical space
+    platform_count = 5 + level
+    spacing = screen_height // (platform_count + 1)
 
     for i in range(platform_count):
         platform_width = random.randint(100, 150)
@@ -84,7 +72,6 @@ def generate_platforms(level):
 
     return platforms
 
-# Reset game state
 def reset_game():
     global player, platforms, player_health, game_time, level, score
     player = Player(screen_width // 2, screen_height - 120)
@@ -96,7 +83,6 @@ def reset_game():
     level = 1
     score = 0
 
-# Draw health bar
 def draw_health_bar(screen, x, y, health, max_health):
     bar_width = 200
     bar_height = 20
@@ -109,7 +95,6 @@ platforms = generate_platforms(level)
 static_platform = Platform(screen_width // 2 - 100, screen_height - 40, 200, 20)  # Smaller static platform
 platforms.insert(0, static_platform)
 
-# Game loop
 running = True
 previously_on_ground = False
 game_over = False
@@ -158,8 +143,8 @@ while running:
                         t0, y0 = score_time, score
                         h, steps = 0.1, 1  # Small step size for smoother updates
                         _, score_values = fourth_order_rk_method(score_function, y0, t0, h, steps)
-                        score = int(score_values[-1])  # Update the score
-                        score_time += h  # Increment the time for score progression
+                        score = int(score_values[-1])
+                        score_time += h 
                         previously_on_ground = True
                     break
 
@@ -167,7 +152,7 @@ while running:
             previously_on_ground = False
 
         # Update moving platforms
-        for platform in platforms:  # <-- Place this here
+        for platform in platforms: 
             platform.update(dt)
         
         # Update difficulty factor dynamically
@@ -204,7 +189,6 @@ while running:
             platforms = generate_platforms(level)
             obstacles = generate_obstacles(level, difficulty_factor)
 
-        # Draw
         screen.fill(WHITE)
         player.draw(screen)
         for platform in platforms:
@@ -212,7 +196,6 @@ while running:
         for obstacle in obstacles:
             obstacle.draw(screen)
 
-        # Draw the score, health, time, and level
         score_text = font.render(f"Score: {score}", True, BLACK)
         health_text = font.render(f"Health: {player_health}", True, BLACK)
         time_text = font.render(f"Time: {int(game_time)}", True, BLACK)
@@ -226,11 +209,9 @@ while running:
         draw_health_bar(screen, 550, 10, player_health, 3)
 
     else:
-        # Game Over Screen
         game_over_text = font.render("Game Over! Press 'R' to Restart", True, RED)
         screen.blit(game_over_text, (screen_width // 2 - game_over_text.get_width() // 2, screen_height // 2))
 
     pygame.display.update()
 
-# Quit Pygame
 pygame.quit()
