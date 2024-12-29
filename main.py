@@ -1,8 +1,8 @@
-import pygame
+import pygame # type: ignore
 from player import Player
-from platform import Platform # type: ignore
+from platform import Platform  # type: ignore
 import random
-from utils import trapezoidal_rule, linear_regression
+from utils import linear_regression, simpsons_one_third_rule, fourth_order_rk_method, score_function
 from obstacle import Obstacle
 
 # Initialize Pygame
@@ -33,6 +33,7 @@ player_health = 3
 game_time = 30  # Game timer set to 30 seconds
 level = 1
 score = 0
+score_time = 0
 
 # Add obstacles to the game
 obstacles = []
@@ -53,11 +54,11 @@ def generate_obstacles(level, difficulty_factor):
         x = random.randint(50, screen_width - width - 50)
         y = random.randint(-200, -50)
         
-        # Adjust this section based on trapezoidal rule
-        # For example, you could integrate between level 0 and the current level:
-        x_values = [0, level]  # Just a simple example for x-values (level as a representation)
-        y_values = [difficulty_factor, difficulty_factor + 0.5]  # Adjust this based on your logic
-        speed = trapezoidal_rule(x_values, y_values)  # Call with correct arguments
+        # Apply Simpson's 1/3 Rule (instead of trapezoidal rule here for demonstration)
+        # For example, we could compute obstacle speed dynamically based on level.
+        x_values = [0, level, level + 5]  # For simplicity: integrating from level to level + 5
+        y_values = [difficulty_factor, difficulty_factor + 0.5, difficulty_factor + 1.0]
+        speed = simpsons_one_third_rule(x_values, y_values)  # Use Simpson's rule
         
         obstacle = Obstacle(x, y, width, height, speed)
         obstacle_list.append(obstacle)
@@ -153,8 +154,12 @@ while running:
             if player.y + player.height <= platform.y and player.y + player.height + player.velocity_y >= platform.y:
                 if player.x + player.width > platform.x and player.x < platform.x + platform.width:
                     on_ground = True
-                    if not previously_on_ground:
-                        score += 1
+                    if on_ground and not previously_on_ground:
+                        t0, y0 = score_time, score
+                        h, steps = 0.1, 1  # Small step size for smoother updates
+                        _, score_values = fourth_order_rk_method(score_function, y0, t0, h, steps)
+                        score = int(score_values[-1])  # Update the score
+                        score_time += h  # Increment the time for score progression
                         previously_on_ground = True
                     break
 

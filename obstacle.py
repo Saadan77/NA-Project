@@ -1,5 +1,5 @@
 import pygame
-from utils import bisection_method  # Import bisection_method from utils.py
+from utils import bisection_method
 
 class Obstacle:
     def __init__(self, x, y, width, height, speed):
